@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CamCall</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="landing">
+    <div class="landing-card">
+      <div class="logo">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect width="64" height="64" rx="16" fill="#0A84FF"/>
+          <path d="M20 20v24l20-12L20 20z" fill="white"/>
+        </svg>
+      </div>
+      <h1>CamCall</h1>
+      <p class="subtitle">FaceTime-quality calls, right in your browser</p>
+
+      <div class="actions">
+        <button id="createBtn" class="btn btn-primary">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          New Call
+        </button>
+
+        <div class="divider">
+          <span>or join an existing call</span>
+        </div>
+
+        <div class="join-form">
+          <input
+            type="text"
+            id="roomInput"
+            placeholder="Enter room code"
+            maxlength="7"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="joinBtn" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+
+      <p class="hint">Share the room link with anyone you want to call</p>
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

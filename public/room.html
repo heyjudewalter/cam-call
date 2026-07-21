@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CamCall - In Call</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="room">
+    <div class="room-header">
+      <div class="room-info">
+        <span class="room-id-display" id="roomIdDisplay"></span>
+        <button id="copyLinkBtn" class="btn-icon" title="Copy invite link">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect x="6" y="6" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M4 12V4a2 2 0 012-2h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="copy-toast" id="copyToast">Copied!</span>
+      </div>
+      <div class="participant-count">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="participantCount">1</span>
+      </div>
+    </div>
+
+    <div class="video-grid" id="videoGrid">
+      <div class="video-container local" id="localVideoContainer">
+        <video id="localVideo" autoplay playsinline muted></video>
+        <div class="video-label">You</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="toggleMicBtn" class="control-btn" title="Toggle microphone">
+        <svg class="icon-mic-on" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 11a7 7 0 0014 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 18v4M8 22h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="icon-mic-off hidden" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 11a7 7 0 009.9 6.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M15 11.3A7 7 0 0019 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <button id="toggleCamBtn" class="control-btn" title="Toggle camera">
+        <svg class="icon-cam-on" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="5" width="15" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M17 9l5-3v12l-5-3V9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <svg class="icon-cam-off hidden" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <rect x="2" y="5" width="15" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M17 9l5-3v12l-5-3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="flipCamBtn" class="control-btn" title="Flip camera">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M20 7l-4-4v3H8a4 4 0 000 8h1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 17l4 4v-3h8a4 4 0 000-8h-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="toggleChatBtn" class="control-btn" title="Toggle chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H7l-4 4V6a2 2 0 012-2z" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="chat-badge hidden" id="chatBadge">0</span>
+      </button>
+
+      <button id="settingsBtn" class="control-btn" title="Settings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <button id="leaveBtn" class="control-btn control-btn-danger" title="Leave call">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M18.36 5.64a9 9 0 11-12.73 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="chat-panel hidden" id="chatPanel">
+      <div class="chat-header">
+        <h3>In-Call Messages</h3>
+        <button id="closeChatBtn" class="btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <form class="chat-input" id="chatForm">
+        <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" />
+        <button type="submit" class="btn-icon btn-send">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 9l14-7-4 16-4-6-6-3z" fill="currentColor"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="settings-panel hidden" id="settingsPanel">
+      <div class="settings-header">
+        <h3>Settings</h3>
+        <button id="closeSettingsBtn" class="btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-section">
+          <h4>Camera</h4>
+          <label class="settings-label">Camera</label>
+          <select id="cameraSelect" class="settings-select"></select>
+          <label class="settings-label">Resolution</label>
+          <select id="resolutionSelect" class="settings-select">
+            <option value="640x480">SD (480p)</option>
+            <option value="1280x720" selected>HD (720p)</option>
+            <option value="1920x1080">Full HD (1080p)</option>
+          </select>
+        </div>
+        <div class="settings-section">
+          <h4>Microphone</h4>
+          <label class="settings-label">Microphone</label>
+          <select id="micSelect" class="settings-select"></select>
+          <label class="settings-label">Noise Suppression</label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="noiseSuppressionToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="settings-label">Echo Cancellation</label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="echoCancellationToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="settings-label">Auto Gain Control</label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="autoGainToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="waiting-overlay hidden" id="waitingOverlay">
+      <div class="waiting-content">
+        <div class="spinner"></div>
+        <p>Waiting for others to join...</p>
+        <p class="hint">Share this link to invite someone</p>
+      </div>
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/room.js"></script>
+</body>
+</html>
