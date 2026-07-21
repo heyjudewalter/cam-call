@@ -26,13 +26,27 @@ Open `http://localhost:3000` in your browser.
 
 ## Desktop Installers
 
-Cross-platform installers that auto-install Node.js if needed:
+Cross-platform shell installers that auto-install Node.js if needed (download from [Releases](https://github.com/heyjudewalter/cam-call/releases)):
 
 | Platform | Script |
 |----------|--------|
 | macOS / Linux | `bash install.sh` |
 | Windows | Double-click `install.bat` |
 | Windows (PowerShell) | Right-click `install.ps1` > Run with PowerShell |
+
+## Electron Desktop App
+
+Native desktop app — no terminal, no browser needed. Runs the server in the background.
+
+```bash
+npm install
+npm run electron        # Run in dev mode
+npm run build:mac       # Build .dmg (macOS)
+npm run build:win       # Build .exe installer (Windows)
+npm run build:linux     # Build .AppImage (Linux)
+```
+
+Output will be in the `dist/` folder.
 
 ## Deploy to JustRunMy.App
 
@@ -46,6 +60,8 @@ Cross-platform installers that auto-install Node.js if needed:
 ```
 camcall/
   server.js          # Express + Socket.IO signaling server
+  electron/
+    main.js          # Electron main process
   public/
     index.html       # Landing page (create/join room)
     room.html        # Video call room

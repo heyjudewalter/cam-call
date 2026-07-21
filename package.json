@@ -2,10 +2,37 @@
   "name": "camcall",
   "version": "1.0.0",
   "description": "FaceTime-like video calling app with in-call messaging",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "electron": "electron .",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.camcall.app",
+    "productName": "CamCall",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "server.js",
+      "public/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Network"
+    }
   },
   "keywords": [],
   "author": "",
@@ -13,5 +40,9 @@
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8"
   }
 }
