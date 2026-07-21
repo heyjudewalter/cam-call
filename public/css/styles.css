@@ -310,6 +310,43 @@ html, body {
   justify-content: center;
 }
 
+/* Video overlay to block native context menu */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Owner moderation button */
+.mod-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.video-container:hover .mod-btn {
+  opacity: 1;
+}
+
+.mod-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Controls */
 .controls {
   display: flex;

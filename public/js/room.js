@@ -190,24 +190,33 @@ function addRemoteVideo(peerId, stream) {
     container.className = "video-container remote";
     container.innerHTML = `
       <video autoplay playsinline></video>
+      <div class="video-overlay"></div>
       <div class="video-label">Participant</div>
       <div class="hand-raised-indicator hidden" id="hand-${peerId}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path d="M18 8a2 2 0 012 2v2a2 2 0 01-2 2h-1l-1 5H8l-2-5H5a2 2 0 01-2-2v-6a2 2 0 014 0v4h2V6a2 2 0 014 0v4h2V8z" fill="#FFD60A"/>
         </svg>
       </div>
+      ${isOwner ? `<button class="mod-btn" data-peer="${peerId}" title="Moderate">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+          <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+          <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+        </svg>
+      </button>` : ""}
     `;
 
     if (isOwner) {
-      const handler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        contextTargetId = peerId;
-        contextMenu.style.left = e.pageX + "px";
-        contextMenu.style.top = e.pageY + "px";
-        contextMenu.classList.remove("hidden");
-      };
-      container.addEventListener("contextmenu", handler);
+      const modBtn = container.querySelector(".mod-btn");
+      if (modBtn) {
+        modBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          contextTargetId = peerId;
+          contextMenu.style.left = e.pageX + "px";
+          contextMenu.style.top = e.pageY + "px";
+          contextMenu.classList.remove("hidden");
+        });
+      }
 
       container.addEventListener("click", () => {
         contextMenu.classList.add("hidden");
@@ -219,18 +228,6 @@ function addRemoteVideo(peerId, stream) {
 
   const video = container.querySelector("video");
   video.srcObject = stream;
-
-  if (isOwner) {
-    video.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      contextTargetId = peerId;
-      contextMenu.style.left = e.pageX + "px";
-      contextMenu.style.top = e.pageY + "px";
-      contextMenu.classList.remove("hidden");
-    });
-  }
-
   updateGridLayout();
 }
 
@@ -611,18 +608,20 @@ autoGainToggle.addEventListener("change", () => replaceAudioTrack());
 // Context menu (owner)
 function addContextMenuToAll() {
   document.querySelectorAll(".video-container.remote").forEach((container) => {
+    if (container.querySelector(".mod-btn")) return;
     const id = container.id.replace("remote-", "");
-    const handler = (e) => {
-      e.preventDefault();
+    const btn = document.createElement("button");
+    btn.className = "mod-btn";
+    btn.title = "Moderate";
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="13" r="1.5" fill="currentColor"/></svg>`;
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       contextTargetId = id;
       contextMenu.style.left = e.pageX + "px";
       contextMenu.style.top = e.pageY + "px";
       contextMenu.classList.remove("hidden");
-    };
-    container.addEventListener("contextmenu", handler);
-    const video = container.querySelector("video");
-    if (video) video.addEventListener("contextmenu", handler);
+    });
+    container.appendChild(btn);
   });
 }
 
