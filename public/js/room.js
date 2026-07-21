@@ -92,7 +92,11 @@ async function init() {
         return;
       }
 
-      isOwner = false;
+      isOwner = response.isOwner || false;
+      if (isOwner) {
+        ownerBadge.classList.remove("hidden");
+        addContextMenuToAll();
+      }
       waitingOverlay.classList.remove("hidden");
 
       if (response.warnings && response.warnings.length > 0) {

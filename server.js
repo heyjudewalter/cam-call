@@ -62,17 +62,13 @@ io.on("connection", (socket) => {
     rooms.set(roomId, {
       owner: socket.id,
       password: password || null,
-      users: new Set([socket.id]),
+      users: new Set(),
       bans: new Set(),
       ipBans: new Set(),
       warnings: new Map(),
       raisedHands: new Set(),
       maxParticipants: 8,
     });
-
-    socket.join(roomId);
-    socket.data.roomId = roomId;
-    socket.data.isOwner = true;
     callback({ roomId });
     console.log(`Room ${roomId} created by ${socket.id}`);
   });
@@ -118,13 +114,14 @@ io.on("connection", (socket) => {
     room.users.add(socket.id);
     socket.join(roomId);
     socket.data.roomId = roomId;
-    socket.data.isOwner = false;
+    socket.data.isOwner = socket.id === room.owner;
     socket.data.ip = ip;
 
     callback({
       roomId,
       users: existingUsers,
       owner: room.owner,
+      isOwner: socket.id === room.owner,
       warnings: existingWarnings,
     });
     socket.to(roomId).emit("user-connected", socket.id);
