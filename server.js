@@ -155,6 +155,37 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("raise-hand", { userId: socket.id, raised });
   });
 
+  // Lower hand (owner can lower anyone's hand)
+  socket.on("lower-hand", (targetId) => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    // Owner can lower anyone, users can lower their own
+    if (room.owner !== socket.id && targetId !== socket.id) return;
+
+    room.raisedHands.delete(targetId);
+    io.to(roomId).emit("raise-hand", { userId: targetId, raised: false });
+  });
+
+  // Transfer ownership
+  socket.on("transfer-ownership", (targetId) => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.owner !== socket.id) return;
+    if (!room.users.has(targetId)) return;
+
+    room.owner = targetId;
+    socket.data.isOwner = false;
+    const targetSocket = io.sockets.sockets.get(targetId);
+    if (targetSocket) targetSocket.data.isOwner = true;
+
+    io.to(roomId).emit("ownership-changed", { newOwner: targetId });
+    console.log(`Ownership transferred to ${targetId} in room ${roomId}`);
+  });
+
   // Owner actions
   socket.on("kick-user", (targetId) => {
     const roomId = socket.data.roomId;

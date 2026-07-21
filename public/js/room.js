@@ -23,8 +23,12 @@ let selectedMic = null;
 let isOwner = false;
 let isScreenSharing = false;
 let screenStream = null;
+let contextTargetId = null;
 let handRaised = false;
+let roomOwner = null;
+const raisedHands = new Set();
 const peers = new Map();
+const remoteUsers = new Map();
 
 const localVideo = document.getElementById("localVideo");
 const videoGrid = document.getElementById("videoGrid");
@@ -49,15 +53,16 @@ const noiseSuppressionToggle = document.getElementById("noiseSuppressionToggle")
 const echoCancellationToggle = document.getElementById("echoCancellationToggle");
 const autoGainToggle = document.getElementById("autoGainToggle");
 const ownerBadge = document.getElementById("ownerBadge");
-const contextMenu = document.getElementById("contextMenu");
+const participantsPanel = document.getElementById("participantsPanel");
+const participantsList = document.getElementById("participantsList");
+const participantBtn = document.getElementById("participantBtn");
+const closeParticipantsBtn = document.getElementById("closeParticipantsBtn");
 const warnModal = document.getElementById("warnModal");
 const kickedModal = document.getElementById("kickedModal");
 const warningBanner = document.getElementById("warningBanner");
 const warningText = document.getElementById("warningText");
 const dismissWarning = document.getElementById("dismissWarning");
 const localHandIndicator = document.getElementById("localHandIndicator");
-
-let contextTargetId = null;
 
 roomIdDisplay.textContent = roomId;
 
@@ -93,9 +98,9 @@ async function init() {
       }
 
       isOwner = response.isOwner || false;
+      roomOwner = response.owner || null;
       if (isOwner) {
         ownerBadge.classList.remove("hidden");
-        addContextMenuToAll();
       }
       waitingOverlay.classList.remove("hidden");
 
@@ -190,39 +195,13 @@ function addRemoteVideo(peerId, stream) {
     container.className = "video-container remote";
     container.innerHTML = `
       <video autoplay playsinline></video>
-      <div class="video-overlay"></div>
-      <div class="video-label">Participant</div>
+      <div class="video-label">${remoteUsers.get(peerId) || "Participant"}</div>
       <div class="hand-raised-indicator hidden" id="hand-${peerId}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path d="M18 8a2 2 0 012 2v2a2 2 0 01-2 2h-1l-1 5H8l-2-5H5a2 2 0 01-2-2v-6a2 2 0 014 0v4h2V6a2 2 0 014 0v4h2V8z" fill="#FFD60A"/>
         </svg>
       </div>
-      ${isOwner ? `<button class="mod-btn" data-peer="${peerId}" title="Moderate">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
-          <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-          <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
-        </svg>
-      </button>` : ""}
     `;
-
-    if (isOwner) {
-      const modBtn = container.querySelector(".mod-btn");
-      if (modBtn) {
-        modBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          contextTargetId = peerId;
-          contextMenu.style.left = e.pageX + "px";
-          contextMenu.style.top = e.pageY + "px";
-          contextMenu.classList.remove("hidden");
-        });
-      }
-
-      container.addEventListener("click", () => {
-        contextMenu.classList.add("hidden");
-      });
-    }
-
     videoGrid.appendChild(container);
   }
 
@@ -283,7 +262,12 @@ socket.on("signal", async ({ from, signal }) => {
 
 socket.on("user-connected", (userId) => {
   console.log("User connected:", userId);
+  remoteUsers.set(userId, userId.slice(0, 8));
   createPeer(userId, true);
+  participantCount.textContent = peers.size + 1;
+  if (participantsPanel && !participantsPanel.classList.contains("hidden")) {
+    renderParticipants();
+  }
 });
 
 socket.on("user-disconnected", (userId) => {
@@ -293,15 +277,22 @@ socket.on("user-disconnected", (userId) => {
     peer.pc.close();
     peers.delete(userId);
   }
+  remoteUsers.delete(userId);
+  raisedHands.delete(userId);
   chat.removeDataChannel(userId);
   removeRemoteVideo(userId);
+  participantCount.textContent = peers.size + 1;
+  if (participantsPanel && !participantsPanel.classList.contains("hidden")) {
+    renderParticipants();
+  }
 });
 
 // Ownership transferred
 socket.on("ownership-transferred", () => {
   isOwner = true;
+  roomOwner = socket.id;
   ownerBadge.classList.remove("hidden");
-  addContextMenuToAll();
+  renderParticipants();
 });
 
 // Raise hand
@@ -309,6 +300,37 @@ socket.on("raise-hand", ({ userId, raised }) => {
   const indicator = document.getElementById(`hand-${userId}`);
   if (indicator) {
     indicator.classList.toggle("hidden", !raised);
+  }
+  if (raised) {
+    raisedHands.add(userId);
+  } else {
+    raisedHands.delete(userId);
+  }
+  if (participantsPanel && !participantsPanel.classList.contains("hidden")) {
+    renderParticipants();
+  }
+});
+
+// Ownership changed
+socket.on("ownership-changed", ({ newOwner }) => {
+  roomOwner = newOwner;
+  isOwner = newOwner === socket.id;
+  ownerBadge.classList.toggle("hidden", !isOwner);
+  renderParticipants();
+});
+
+// Lower hand (moderator action)
+socket.on("lower-hand", ({ targetId }) => {
+  if (targetId === socket.id) {
+    handRaised = false;
+    raiseHandBtn.classList.remove("active");
+    localHandIndicator.classList.add("hidden");
+  }
+  raisedHands.delete(targetId);
+  const indicator = document.getElementById(`hand-${targetId}`);
+  if (indicator) indicator.classList.add("hidden");
+  if (participantsPanel && !participantsPanel.classList.contains("hidden")) {
+    renderParticipants();
   }
 });
 
@@ -605,54 +627,128 @@ noiseSuppressionToggle.addEventListener("change", () => replaceAudioTrack());
 echoCancellationToggle.addEventListener("change", () => replaceAudioTrack());
 autoGainToggle.addEventListener("change", () => replaceAudioTrack());
 
-// Context menu (owner)
-function addContextMenuToAll() {
-  document.querySelectorAll(".video-container.remote").forEach((container) => {
-    if (container.querySelector(".mod-btn")) return;
-    const id = container.id.replace("remote-", "");
-    const btn = document.createElement("button");
-    btn.className = "mod-btn";
-    btn.title = "Moderate";
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="13" r="1.5" fill="currentColor"/></svg>`;
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      contextTargetId = id;
-      contextMenu.style.left = e.pageX + "px";
-      contextMenu.style.top = e.pageY + "px";
-      contextMenu.classList.remove("hidden");
-    });
-    container.appendChild(btn);
-  });
-}
+// Participant panel
+participantBtn.addEventListener("click", () => {
+  participantsPanel.classList.toggle("hidden");
+  renderParticipants();
+});
+
+closeParticipantsBtn.addEventListener("click", () => {
+  participantsPanel.classList.add("hidden");
+});
 
 document.addEventListener("click", (e) => {
-  if (!contextMenu.contains(e.target)) {
-    contextMenu.classList.add("hidden");
+  if (
+    participantsPanel &&
+    !participantsPanel.contains(e.target) &&
+    !participantBtn.contains(e.target)
+  ) {
+    participantsPanel.classList.add("hidden");
   }
 });
 
-document.getElementById("ctxWarn").addEventListener("click", () => {
-  contextMenu.classList.add("hidden");
-  document.getElementById("warnModalTarget").textContent = `Warn this participant`;
-  warnModal.classList.remove("hidden");
-  document.getElementById("warnMessage").value = "";
-  document.getElementById("warnMessage").focus();
-});
+function renderParticipants() {
+  participantsList.innerHTML = "";
 
-document.getElementById("ctxKick").addEventListener("click", () => {
-  contextMenu.classList.add("hidden");
-  socket.emit("kick-user", contextTargetId);
-});
+  // Owner first
+  if (roomOwner) {
+    participantsList.appendChild(createParticipantRow(roomOwner, true));
+  }
 
-document.getElementById("ctxBan").addEventListener("click", () => {
-  contextMenu.classList.add("hidden");
-  socket.emit("ban-user", contextTargetId);
-});
+  // Other users
+  for (const [userId] of peers) {
+    if (userId !== roomOwner) {
+      participantsList.appendChild(createParticipantRow(userId, false));
+    }
+  }
+}
 
-document.getElementById("ctxIpBan").addEventListener("click", () => {
-  contextMenu.classList.add("hidden");
-  socket.emit("ip-ban-user", contextTargetId);
-});
+function createParticipantRow(userId, isOwnerUser) {
+  const div = document.createElement("div");
+  div.className = "participant-row";
+
+  const handUp = raisedHands.has(userId);
+  const label = userId === socket.id ? "You" : userId.slice(0, 8);
+
+  let actionsHtml = "";
+  if (isOwner && userId !== socket.id) {
+    actionsHtml = `
+      <div class="participant-actions">
+        <button class="p-action" data-action="warn" data-id="${userId}" title="Warn">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 14h14L8 1z" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="6" x2="8" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="p-action" data-action="lower-hand" data-id="${userId}" title="Lower hand" ${!handUp ? "disabled" : ""}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 8a2 2 0 012 2v2a2 2 0 01-2 2h-1l-1 5H8l-2-5H5a2 2 0 01-2-2v-6a2 2 0 014 0v4h2V6a2 2 0 014 0v4h2V8z" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <button class="p-action" data-action="transfer" data-id="${userId}" title="Transfer ownership">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 4 4M6 8v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="p-action p-danger" data-action="kick" data-id="${userId}" title="Kick">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.5-5 6-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="p-action p-danger" data-action="ban" data-id="${userId}" title="Ban">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="p-action p-danger" data-action="ipban" data-id="${userId}" title="IP Ban">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M5 5l6 6M11 5L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <div class="participant-info">
+      <span class="participant-name">${label}</span>
+      ${isOwnerUser ? '<span class="participant-owner-tag">Owner</span>' : ""}
+      ${handUp ? '<span class="participant-hand">&#9995;</span>' : ""}
+    </div>
+    ${actionsHtml}
+  `;
+
+  if (isOwner && userId !== socket.id) {
+    div.querySelectorAll(".p-action").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        handleParticipantAction(action, id);
+      });
+    });
+  }
+
+  return div;
+}
+
+function handleParticipantAction(action, targetId) {
+  switch (action) {
+    case "warn":
+      document.getElementById("warnModalTarget").textContent = `Warn participant`;
+      warnModal.classList.remove("hidden");
+      document.getElementById("warnMessage").value = "";
+      document.getElementById("warnMessage").focus();
+      contextTargetId = targetId;
+      break;
+    case "lower-hand":
+      socket.emit("lower-hand", targetId);
+      raisedHands.delete(targetId);
+      renderParticipants();
+      break;
+    case "transfer":
+      if (confirm("Transfer ownership to this participant?")) {
+        socket.emit("transfer-ownership", targetId);
+      }
+      break;
+    case "kick":
+      socket.emit("kick-user", targetId);
+      break;
+    case "ban":
+      socket.emit("ban-user", targetId);
+      break;
+    case "ipban":
+      socket.emit("ip-ban-user", targetId);
+      break;
+  }
+}
 
 document.getElementById("warnCancel").addEventListener("click", () => {
   warnModal.classList.add("hidden");

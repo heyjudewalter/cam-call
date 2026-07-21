@@ -1,0 +1,69 @@
+# CamCall
+
+A FaceTime-like web application for peer-to-peer video calls with in-call messaging.
+
+## Features
+
+- P2P video calls via WebRTC (up to 8 participants)
+- In-call text chat via data channels (no server relay)
+- Screen sharing
+- Flip camera
+- Raise hand
+- Device selection (camera, microphone)
+- Resolution and audio settings
+- Password-protected rooms
+- Owner moderation: warn, kick, ban, IP ban, lower hand, transfer ownership
+- Community rules page
+
+## Quick Start
+
+```bash
+npm install
+npm start
+```
+
+Open `http://localhost:3000` in your browser.
+
+## Desktop Installers
+
+Cross-platform installers that auto-install Node.js if needed:
+
+| Platform | Script |
+|----------|--------|
+| macOS / Linux | `bash install.sh` |
+| Windows | Double-click `install.bat` |
+| Windows (PowerShell) | Right-click `install.ps1` > Run with PowerShell |
+
+## Deploy to JustRunMy.App
+
+1. Push this repo to GitHub
+2. Connect your GitHub repo on [JustRunMy.App](https://justrunmy.app)
+3. Set the start command to `npm start`
+4. Done
+
+## Project Structure
+
+```
+camcall/
+  server.js          # Express + Socket.IO signaling server
+  public/
+    index.html       # Landing page (create/join room)
+    room.html        # Video call room
+    rules.html       # Community rules
+    css/styles.css   # All styles
+    js/
+      app.js         # Landing page logic
+      room.js        # WebRTC, controls, moderation
+      chat.js        # In-call messaging
+```
+
+## Tech Stack
+
+- Node.js + Express
+- Socket.IO (signaling only)
+- WebRTC (P2P media + data channels)
+- Vanilla JS (no frameworks)
+
+## License
+
+MIT

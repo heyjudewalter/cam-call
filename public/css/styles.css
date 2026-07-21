@@ -243,6 +243,17 @@ html, body {
   gap: 6px;
   color: var(--text-secondary);
   font-size: 14px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.participant-count:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
 }
 
 /* Video Grid */
@@ -315,36 +326,6 @@ html, body {
   position: absolute;
   inset: 0;
   z-index: 1;
-}
-
-/* Owner moderation button */
-.mod-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 5;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: none;
-  border-radius: 50%;
-  color: white;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.video-container:hover .mod-btn {
-  opacity: 1;
-}
-
-.mod-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Controls */
@@ -807,39 +788,112 @@ html, body {
   50% { transform: translateY(-4px); }
 }
 
-/* Context menu */
-.context-menu {
+/* Participant panel */
+.participants-panel {
   position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 300px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px;
-  z-index: 50;
-  min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid var(--border);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
 }
 
-.ctx-item {
+.participants-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 13px;
-  cursor: pointer;
-  border-radius: 6px;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.participants-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.participants-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
   transition: background 0.15s;
 }
 
-.ctx-item:hover {
+.participant-row:hover {
   background: var(--bg-tertiary);
 }
 
-.ctx-danger {
+.participant-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participant-name {
+  font-size: 14px;
+}
+
+.participant-owner-tag {
+  font-size: 11px;
+  background: var(--accent);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.participant-hand {
+  font-size: 14px;
+}
+
+.participant-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.p-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.p-action:hover:not([disabled]) {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+.p-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.p-action.p-danger {
   color: var(--danger);
+  border-color: transparent;
+}
+
+.p-action.p-danger:hover {
+  background: rgba(255, 69, 58, 0.15);
 }
 
 /* Modal */

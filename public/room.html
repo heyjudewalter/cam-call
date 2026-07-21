@@ -20,13 +20,13 @@
         <span class="copy-toast" id="copyToast">Copied!</span>
       </div>
       <div class="header-right">
-        <div class="participant-count">
+        <button class="participant-count clickable" id="participantBtn">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
             <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           <span id="participantCount">1</span>
-        </div>
+        </button>
         <div class="owner-badge hidden" id="ownerBadge">Owner</div>
       </div>
     </div>
@@ -127,37 +127,17 @@
       </button>
     </div>
 
-    <!-- Participant context menu (owner only) -->
-    <div class="context-menu hidden" id="contextMenu">
-      <button id="ctxWarn" class="ctx-item">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 1L1 14h14L8 1z" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="8" y1="6" x2="8" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        Warn
-      </button>
-      <button id="ctxKick" class="ctx-item ctx-danger">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M2 14c0-3 2.5-5 6-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="11" y1="9" x2="15" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        Kick
-      </button>
-      <button id="ctxBan" class="ctx-item ctx-danger">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        Ban
-      </button>
-      <button id="ctxIpBan" class="ctx-item ctx-danger">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M5 5l6 6M11 5L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        IP Ban
-      </button>
+    <!-- Participant list panel -->
+    <div class="participants-panel hidden" id="participantsPanel">
+      <div class="participants-header">
+        <h3>Participants</h3>
+        <button id="closeParticipantsBtn" class="btn-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="participants-list" id="participantsList"></div>
     </div>
 
     <!-- Warn dialog -->
