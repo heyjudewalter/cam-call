@@ -20,6 +20,10 @@ let camEnabled = true;
 let facingMode = "user";
 let selectedCamera = null;
 let selectedMic = null;
+let isOwner = false;
+let isScreenSharing = false;
+let screenStream = null;
+let handRaised = false;
 const peers = new Map();
 
 const localVideo = document.getElementById("localVideo");
@@ -31,6 +35,8 @@ const copyToast = document.getElementById("copyToast");
 const toggleMicBtn = document.getElementById("toggleMicBtn");
 const toggleCamBtn = document.getElementById("toggleCamBtn");
 const flipCamBtn = document.getElementById("flipCamBtn");
+const screenShareBtn = document.getElementById("screenShareBtn");
+const raiseHandBtn = document.getElementById("raiseHandBtn");
 const settingsBtn = document.getElementById("settingsBtn");
 const leaveBtn = document.getElementById("leaveBtn");
 const waitingOverlay = document.getElementById("waitingOverlay");
@@ -42,6 +48,16 @@ const resolutionSelect = document.getElementById("resolutionSelect");
 const noiseSuppressionToggle = document.getElementById("noiseSuppressionToggle");
 const echoCancellationToggle = document.getElementById("echoCancellationToggle");
 const autoGainToggle = document.getElementById("autoGainToggle");
+const ownerBadge = document.getElementById("ownerBadge");
+const contextMenu = document.getElementById("contextMenu");
+const warnModal = document.getElementById("warnModal");
+const kickedModal = document.getElementById("kickedModal");
+const warningBanner = document.getElementById("warningBanner");
+const warningText = document.getElementById("warningText");
+const dismissWarning = document.getElementById("dismissWarning");
+const localHandIndicator = document.getElementById("localHandIndicator");
+
+let contextTargetId = null;
 
 roomIdDisplay.textContent = roomId;
 
@@ -69,14 +85,20 @@ async function init() {
       };
     });
 
-    socket.emit("join-room", roomId, (response) => {
+    socket.emit("join-room", { roomId }, (response) => {
       if (response.error) {
         alert(response.error);
         window.location.href = "/";
         return;
       }
 
+      isOwner = false;
       waitingOverlay.classList.remove("hidden");
+
+      if (response.warnings && response.warnings.length > 0) {
+        const latestWarning = response.warnings[response.warnings.length - 1];
+        showWarning(latestWarning.message);
+      }
 
       if (response.users && response.users.length > 0) {
         response.users.forEach((userId) => {
@@ -165,7 +187,27 @@ function addRemoteVideo(peerId, stream) {
     container.innerHTML = `
       <video autoplay playsinline></video>
       <div class="video-label">Participant</div>
+      <div class="hand-raised-indicator hidden" id="hand-${peerId}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 8a2 2 0 012 2v2a2 2 0 01-2 2h-1l-1 5H8l-2-5H5a2 2 0 01-2-2v-6a2 2 0 014 0v4h2V6a2 2 0 014 0v4h2V8z" fill="#FFD60A"/>
+        </svg>
+      </div>
     `;
+
+    if (isOwner) {
+      container.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        contextTargetId = peerId;
+        contextMenu.style.left = e.pageX + "px";
+        contextMenu.style.top = e.pageY + "px";
+        contextMenu.classList.remove("hidden");
+      });
+
+      container.addEventListener("click", () => {
+        contextMenu.classList.add("hidden");
+      });
+    }
+
     videoGrid.appendChild(container);
   }
 
@@ -240,6 +282,63 @@ socket.on("user-disconnected", (userId) => {
   removeRemoteVideo(userId);
 });
 
+// Ownership transferred
+socket.on("ownership-transferred", () => {
+  isOwner = true;
+  ownerBadge.classList.remove("hidden");
+  addContextMenuToAll();
+});
+
+// Raise hand
+socket.on("raise-hand", ({ userId, raised }) => {
+  const indicator = document.getElementById(`hand-${userId}`);
+  if (indicator) {
+    indicator.classList.toggle("hidden", !raised);
+  }
+});
+
+// Kicked/Banned
+socket.on("kicked", ({ type }) => {
+  const titles = {
+    kick: "You have been kicked",
+    ban: "You have been banned",
+    ipban: "You have been IP banned",
+  };
+  const messages = {
+    kick: "You were removed from this call by the owner. You may rejoin.",
+    ban: "You have been banned from this call and cannot rejoin.",
+    ipban: "You have been IP banned from this call.",
+  };
+  document.getElementById("kickedTitle").textContent = titles[type] || "Removed";
+  document.getElementById("kickedMessage").textContent = messages[type] || "";
+  document.getElementById("kickedIcon").innerHTML =
+    type === "kick" ? "&#x1F6AB;" : "&#x26D4;";
+  kickedModal.classList.remove("hidden");
+});
+
+// Warning received
+socket.on("warning-received", ({ message }) => {
+  showWarning(message);
+});
+
+// Moderation events (owner sees)
+socket.on("moderation-event", ({ type, target, by, message }) => {
+  console.log(`Moderation: ${type} on ${target} by ${by}${message ? `: ${message}` : ""}`);
+});
+
+function showWarning(message) {
+  warningText.textContent = `Warning: ${message}`;
+  warningBanner.classList.remove("hidden");
+}
+
+dismissWarning.addEventListener("click", () => {
+  warningBanner.classList.add("hidden");
+});
+
+document.getElementById("kickedOk").addEventListener("click", () => {
+  window.location.href = "/";
+});
+
 // Controls
 toggleMicBtn.addEventListener("click", () => {
   micEnabled = !micEnabled;
@@ -267,7 +366,6 @@ function updateCamButton() {
   toggleCamBtn.querySelector(".icon-cam-on").classList.toggle("hidden", !camEnabled);
   toggleCamBtn.querySelector(".icon-cam-off").classList.toggle("hidden", camEnabled);
   toggleCamBtn.classList.toggle("active", !camEnabled);
-
   const localContainer = document.getElementById("localVideoContainer");
   localContainer.classList.toggle("cam-off", !camEnabled);
 }
@@ -370,6 +468,72 @@ async function replaceAudioTrack() {
   }
 }
 
+// Screen Share
+screenShareBtn.addEventListener("click", async () => {
+  if (isScreenSharing) {
+    stopScreenShare();
+  } else {
+    startScreenShare();
+  }
+});
+
+async function startScreenShare() {
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: "always" },
+      audio: false,
+    });
+
+    const screenTrack = screenStream.getVideoTracks()[0];
+
+    for (const [, { pc }] of peers) {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) {
+        sender.replaceTrack(screenTrack);
+      }
+    }
+
+    localVideo.srcObject = screenStream;
+    isScreenSharing = true;
+    screenShareBtn.classList.add("active");
+
+    screenTrack.onended = () => {
+      stopScreenShare();
+    };
+  } catch (err) {
+    console.error("Screen share failed:", err);
+  }
+}
+
+async function stopScreenShare() {
+  if (!screenStream) return;
+
+  screenStream.getTracks().forEach((track) => track.stop());
+
+  const camTrack = localStream.getVideoTracks()[0];
+  if (camTrack) {
+    for (const [, { pc }] of peers) {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) {
+        sender.replaceTrack(camTrack);
+      }
+    }
+    localVideo.srcObject = localStream;
+  }
+
+  isScreenSharing = false;
+  screenShareBtn.classList.remove("active");
+  screenStream = null;
+}
+
+// Raise Hand
+raiseHandBtn.addEventListener("click", () => {
+  handRaised = !handRaised;
+  raiseHandBtn.classList.toggle("active", handRaised);
+  localHandIndicator.classList.toggle("hidden", !handRaised);
+  socket.emit("raise-hand", handRaised);
+});
+
 // Settings Panel
 settingsBtn.addEventListener("click", () => {
   settingsPanel.classList.toggle("hidden");
@@ -384,7 +548,6 @@ closeSettingsBtn.addEventListener("click", () => {
 async function enumerateDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
-
     cameraSelect.innerHTML = "";
     micSelect.innerHTML = "";
 
@@ -422,25 +585,71 @@ micSelect.addEventListener("change", (e) => {
   replaceAudioTrack();
 });
 
-resolutionSelect.addEventListener("change", () => {
-  replaceVideoTrack();
+resolutionSelect.addEventListener("change", () => replaceVideoTrack());
+noiseSuppressionToggle.addEventListener("change", () => replaceAudioTrack());
+echoCancellationToggle.addEventListener("change", () => replaceAudioTrack());
+autoGainToggle.addEventListener("change", () => replaceAudioTrack());
+
+// Context menu (owner)
+function addContextMenuToAll() {
+  document.querySelectorAll(".video-container.remote").forEach((container) => {
+    const id = container.id.replace("remote-", "");
+    container.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      contextTargetId = id;
+      contextMenu.style.left = e.pageX + "px";
+      contextMenu.style.top = e.pageY + "px";
+      contextMenu.classList.remove("hidden");
+    });
+  });
+}
+
+document.addEventListener("click", (e) => {
+  if (!contextMenu.contains(e.target)) {
+    contextMenu.classList.add("hidden");
+  }
 });
 
-noiseSuppressionToggle.addEventListener("change", () => {
-  replaceAudioTrack();
+document.getElementById("ctxWarn").addEventListener("click", () => {
+  contextMenu.classList.add("hidden");
+  document.getElementById("warnModalTarget").textContent = `Warn this participant`;
+  warnModal.classList.remove("hidden");
+  document.getElementById("warnMessage").value = "";
+  document.getElementById("warnMessage").focus();
 });
 
-echoCancellationToggle.addEventListener("change", () => {
-  replaceAudioTrack();
+document.getElementById("ctxKick").addEventListener("click", () => {
+  contextMenu.classList.add("hidden");
+  socket.emit("kick-user", contextTargetId);
 });
 
-autoGainToggle.addEventListener("change", () => {
-  replaceAudioTrack();
+document.getElementById("ctxBan").addEventListener("click", () => {
+  contextMenu.classList.add("hidden");
+  socket.emit("ban-user", contextTargetId);
 });
 
+document.getElementById("ctxIpBan").addEventListener("click", () => {
+  contextMenu.classList.add("hidden");
+  socket.emit("ip-ban-user", contextTargetId);
+});
+
+document.getElementById("warnCancel").addEventListener("click", () => {
+  warnModal.classList.add("hidden");
+});
+
+document.getElementById("warnConfirm").addEventListener("click", () => {
+  const message = document.getElementById("warnMessage").value.trim();
+  if (message && contextTargetId) {
+    socket.emit("warn-user", { targetId: contextTargetId, message });
+  }
+  warnModal.classList.add("hidden");
+});
+
+// Leave
 leaveBtn.addEventListener("click", () => {
   socket.emit("leave-room");
   localStream.getTracks().forEach((track) => track.stop());
+  if (screenStream) screenStream.getTracks().forEach((t) => t.stop());
   for (const [, { pc }] of peers) {
     pc.close();
   }

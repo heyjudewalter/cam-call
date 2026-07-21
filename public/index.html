@@ -26,6 +26,23 @@
           New Call
         </button>
 
+        <div class="password-toggle">
+          <label class="settings-toggle-inline">
+            <span>Password protect</span>
+            <input type="checkbox" id="passwordToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="password-field hidden" id="passwordField">
+          <input
+            type="password"
+            id="createPassword"
+            placeholder="Set a password"
+            maxlength="32"
+            autocomplete="off"
+          />
+        </div>
+
         <div class="divider">
           <span>or join an existing call</span>
         </div>
@@ -41,9 +58,19 @@
           />
           <button id="joinBtn" class="btn btn-secondary">Join</button>
         </div>
+        <div class="password-field hidden" id="joinPasswordField">
+          <input
+            type="password"
+            id="joinPassword"
+            placeholder="Enter room password"
+            maxlength="32"
+            autocomplete="off"
+          />
+        </div>
       </div>
 
       <p class="hint">Share the room link with anyone you want to call</p>
+      <p class="hint"><a href="/rules.html" style="color: var(--accent); text-decoration: none;">Community Rules</a></p>
     </div>
   </div>
   <script src="/socket.io/socket.io.js"></script>

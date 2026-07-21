@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CamCall - Community Rules</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    html, body { overflow: auto; }
+    .rules-page {
+      min-height: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      background: radial-gradient(ellipse at 50% 0%, #0a1628 0%, #000 70%);
+    }
+    .rules-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      width: 100%;
+      max-width: 640px;
+    }
+    .rules-card h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .rules-card .subtitle {
+      margin-bottom: 32px;
+    }
+    .rules-list {
+      list-style: none;
+      counter-reset: rule;
+    }
+    .rules-list li {
+      counter-increment: rule;
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .rules-list li:last-child {
+      border-bottom: none;
+    }
+    .rules-list li::before {
+      content: counter(rule);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 24px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    .enforcement {
+      margin-top: 28px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .enforcement strong {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="rules-page">
+    <div class="rules-card">
+      <h1>Community Rules</h1>
+      <p class="subtitle">By using CamCall, you agree to follow these rules.</p>
+
+      <ol class="rules-list">
+        <li>Be respectful to everyone. Treat others how you want to be treated.</li>
+        <li>Keep all content family-friendly at all times.</li>
+        <li>No exploits, hacks, or attempts to disrupt the service.</li>
+        <li>Do not share personal information about yourself or others.</li>
+        <li>Do not abuse owner/call moderation permissions.</li>
+        <li>No illegal content of any kind.</li>
+        <li>No inappropriate, explicit, or NSFW content.</li>
+        <li>No spamming, flooding, or disruptive behavior in chats.</li>
+        <li>Do not impersonate other users or misrepresent your identity.</li>
+        <li>Use screen sharing responsibly — do not share private or sensitive content.</li>
+        <li>Follow the instructions of call owners and moderators.</li>
+        <li>Have fun and be a good community member.</li>
+      </ol>
+
+      <div class="enforcement">
+        <strong>Enforcement:</strong> Violating these rules may result in a warning, kick, ban, or IP ban at the discretion of the call owner. Repeated or severe violations may result in permanent removal from the platform.
+      </div>
+
+      <a href="/" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 2L4 8l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to CamCall
+      </a>
+    </div>
+  </div>
+</body>
+</html>
