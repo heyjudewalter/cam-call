@@ -48,12 +48,7 @@ npm run build:linux     # Build .AppImage (Linux)
 
 Output will be in the `dist/` folder.
 
-## Deploy to JustRunMy.App
 
-1. Push this repo to GitHub
-2. Connect your GitHub repo on [JustRunMy.App](https://justrunmy.app)
-3. Set the start command to `npm start`
-4. Done
 
 ## Project Structure
 
