@@ -199,13 +199,15 @@ function addRemoteVideo(peerId, stream) {
     `;
 
     if (isOwner) {
-      container.addEventListener("contextmenu", (e) => {
+      const handler = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         contextTargetId = peerId;
         contextMenu.style.left = e.pageX + "px";
         contextMenu.style.top = e.pageY + "px";
         contextMenu.classList.remove("hidden");
-      });
+      };
+      container.addEventListener("contextmenu", handler);
 
       container.addEventListener("click", () => {
         contextMenu.classList.add("hidden");
@@ -217,6 +219,18 @@ function addRemoteVideo(peerId, stream) {
 
   const video = container.querySelector("video");
   video.srcObject = stream;
+
+  if (isOwner) {
+    video.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      contextTargetId = peerId;
+      contextMenu.style.left = e.pageX + "px";
+      contextMenu.style.top = e.pageY + "px";
+      contextMenu.classList.remove("hidden");
+    });
+  }
+
   updateGridLayout();
 }
 
@@ -598,13 +612,17 @@ autoGainToggle.addEventListener("change", () => replaceAudioTrack());
 function addContextMenuToAll() {
   document.querySelectorAll(".video-container.remote").forEach((container) => {
     const id = container.id.replace("remote-", "");
-    container.addEventListener("contextmenu", (e) => {
+    const handler = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       contextTargetId = id;
       contextMenu.style.left = e.pageX + "px";
       contextMenu.style.top = e.pageY + "px";
       contextMenu.classList.remove("hidden");
-    });
+    };
+    container.addEventListener("contextmenu", handler);
+    const video = container.querySelector("video");
+    if (video) video.addEventListener("contextmenu", handler);
   });
 }
 
